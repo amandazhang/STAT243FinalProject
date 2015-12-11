@@ -1,0 +1,29 @@
+# Tk: initial value: number of starting points 
+
+
+**************************************
+
+Goal:
+-----
+Sample n points independently from f(x) by adaptive rejection sampling.
+
+Steps:
+-------
+# D: The domain of the function f(x):
+  
+  If D is unbounded on the left, choose x1; unbounded on the right, choose x2.
+
+
+# Calculate the functions U(x), S(x) and L(x) using equations given in the paper.
+
+
+# Do sampling:
+
+  sample a value x* from S(x);
+  sample a value w independently from uniform(0,1) distribution.
+  Perform squeezing test -> rejection test -> accept or reject x*
+
+# Updating Tk:
+  append x* into Tk, relabel elements of T(k+1) in ascending order. 
+
+  Do the above calculation of U,S and L using new points.
