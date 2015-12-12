@@ -51,10 +51,10 @@ u_k_function <- function(x){
 # Lower hull:
 # l_k function
 l_k_function <- function(x){
-  j <- min(which(x < z_value))
-  upper <- (T_k[j+1]-x)*h(T_k[j]) + (x-T_k[j])*h(T_k[j+1])
-  lower <- T_k[j+1] - T_k[j]
-  return(upper/lower)
+  j <- min(which(x <= T_k))
+  numerator <- (T_k[j]-x)*h(T_k[j-1]) + (x-T_k[j-1])*h(T_k[j])
+  denominator <- T_k[j] - T_k[j-1]
+  return(numerator/denominator)
 }
 
 #s_k part
