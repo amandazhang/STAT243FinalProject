@@ -57,13 +57,16 @@ l_k_function <- function(x){
     l = -Inf
   } else if (x==max(T_k)){
     j = length(T_k)-1
+    numerator <- (T_k[j+1]-x)*h(T_k[j]) + (x-T_k[j])*h(T_k[j+1])
+    denominator <- T_k[j+1] - T_k[j]
+    l = numerator/denominator
   } else{
     j <- max(which(x >= T_k))
     numerator <- (T_k[j+1]-x)*h(T_k[j]) + (x-T_k[j])*h(T_k[j+1])
     denominator <- T_k[j+1] - T_k[j]
     l = numerator/denominator
   }
-  return(l) # Still need to append l value for x<x1 and x>xk situation.
+  return(l) 
 }
 
 #s_k part
