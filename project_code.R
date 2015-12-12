@@ -48,13 +48,22 @@ u_k_function <- function(x){
   return(h(T_k[j]) + (x - T_k[j]) * grad(h, T_k[j]))
 }
 
-# Lower hull:
+# Lower hull formed from the tangents to h(x):
 # l_k function
 l_k_function <- function(x){
-  j <- min(which(x <= T_k))
-  numerator <- (T_k[j]-x)*h(T_k[j-1]) + (x-T_k[j-1])*h(T_k[j])
-  denominator <- T_k[j] - T_k[j-1]
-  return(numerator/denominator)
+  if (all(x > T_k) == T){
+    l = Inf 
+  } else if (all(x < T_k)==T) {
+    l = -Inf
+  } else if (x==max(T_k)){
+    j = length(T_k)-1
+  } else{
+    j <- max(which(x >= T_k))
+    numerator <- (T_k[j+1]-x)*h(T_k[j]) + (x-T_k[j])*h(T_k[j+1])
+    denominator <- T_k[j+1] - T_k[j]
+    l = numerator/denominator
+  }
+  return(l) # Still need to append l value for x<x1 and x>xk situation.
 }
 
 #s_k part
