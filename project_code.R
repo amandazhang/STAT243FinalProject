@@ -51,10 +51,8 @@ u_k_function <- function(x){
 # Lower hull formed from the tangents to h(x):
 # l_k function
 l_k_function <- function(x){
-  if (all(x > T_k) == T){
-    l = Inf 
-  } else if (all(x < T_k)==T) {
-    l = -Inf
+  if (all(x > T_k) == T | all(x < T_k)==T){
+    l = -Inf 
   } else if (x==max(T_k)){
     j = length(T_k)-1
     numerator <- (T_k[j+1]-x)*h(T_k[j]) + (x-T_k[j])*h(T_k[j+1])
