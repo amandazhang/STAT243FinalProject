@@ -5,10 +5,10 @@
 KS_exp = function(n,lambda){
   
   # generate samples from ARS function
-  #x_fun = ars(dexp(x,lambda),n)
+  x_fun = ars(dexp(x,lambda),n)
   
   # Use dummy exponential sampling function 
-  x_fun = sample_exp(lambda,n)
+  #x_fun = sample_exp(lambda,n)
   
   # construct empirical CDF
   x_fun = sort(x_fun)
