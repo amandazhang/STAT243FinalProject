@@ -64,7 +64,7 @@ KS_unif = function(x_fun,a,b){
   F_fun = (1:n)/n
 
   # Construct empirical CDF using built in R functions
-  x_act = runif(n,mu,sigma)
+  x_act = runif(n,a,b)
   x_act = sort(x_act)
 
   F_act = sapply(x_act,function(x){ F_fun[which.min(abs(x-x_fun))] })
