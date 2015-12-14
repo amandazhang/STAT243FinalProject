@@ -1,5 +1,3 @@
-
-
 #### Adaptive Rejection Sampling ####
 library(numDeriv)
 
@@ -8,6 +6,7 @@ h <- function(x){
   return(log(g(x)))
 }
 
+## Function that tests for log concavity ##
 logconc <- function(h,lb,ub) {
 
   #log concave test here
@@ -15,15 +14,18 @@ logconc <- function(h,lb,ub) {
 
   #tests log concavity
   result <- h(p*lb + (1-p)*ub) >= p*h(lb) + (1-p)*h(ub)
+
   #result is 10000 TRUE's for the 10000 in p
   t <- rep(TRUE, 10000)
   finalreturn <- all.equal(t, result)
+
   #if returns TRUE then all elements are equal and 10000 reps were log concave so log concave
   if (finalreturn == FALSE) {
     stop("Density input to ars likely not log-concave. Please check and try again.")
   }
 }
 
+## Test for uniform case ##
 utest <- function(g, lb, ub) {
   d <- (ub-lb)/100
   delta <- (ub - lb)/100
@@ -39,7 +41,7 @@ utest <- function(g, lb, ub) {
   return(uniformcase)
 }
 
-#find optimum function
+## Find optimum function and X_init ##
 findmax <- function(h,lb,ub) {
   delta <- (ub - lb)/1000
   max <- optimize(f = h, interval = c(lb, ub), lower = lb, upper = ub, maximum = TRUE)$maximum
@@ -64,15 +66,24 @@ findmax <- function(h,lb,ub) {
 
 ## Compute intersection points of tangents, z ##
 ConstructZ <- function(x,h,lb,ub){
-  z <- c(mode = "numeric",length = length(x))
-  x_1 <- c(x, 0)
-  x_2 <- c(0, x)
-  Num <- h(x_1)-h(x_2)-x_1*grad(h,x_1)+x_2*grad(h,x_2)
-  Den <- grad(h,x_2)-grad(h,x_1)
-  tmp <- Num/Den
-  tmp[1] <- lb
-  tmp[length(x)+1] <- ub
-  return(tmp)
+    k = length(x)
+    x_j1 <- c(0,x)
+    x_j <- c(x,0)
+    Num <- h(x_j1)-h(x_j)-x_j1*grad(h,x_j1)+x_j*grad(h,x_j)
+    Den <- grad(h,x_j)-grad(h,x_j1)
+    
+    if(sum(abs(Den),na.rm = TRUE)<1e-6){
+        
+        tmp <-  (x[-1] + x[-k])/2
+        tmp <- c(lb+1e-4,tmp,ub)
+        
+    }else{
+        
+        tmp <- Num/Den
+        tmp[1] <- lb
+        tmp[length(x)+1] <- ub
+    }
+    return(tmp)
 }
 
 ## Lower bound, l(x) ##
@@ -108,7 +119,6 @@ Envelope <- function(x,C,H_k,dH_k,X_k,Z_k){
 ## Generate candidate samples by sampling from envelope s(x) ##
 # We sample from the inverse CDF of the envelope by first randomly selection a segment of the envelope, and then treating
 # the selected segment as a PDF supported by the adjacent Z_k points
-
 GenCandidates <- function(u,cum_area_env,H_k,X_k,dH_k,Z_k,areas_u){
   j <- max(which(u > cum_area_env))
   if(dH_k[j] == 0){
@@ -125,9 +135,7 @@ GenCandidates <- function(u,cum_area_env,H_k,X_k,dH_k,Z_k,areas_u){
     # Use inverse CDF of selected segment to generate a sample
     x = (1/dH_k[j])*log(w_sc*areas_u[j]/(exp(H_k[j] - X_k[j]*dH_k[j])) + exp(Z_k[j]*dH_k[j]))
   }
-
   return(x)
-
 }
 
 ## Apply squeeze and rejection test to each candidate sample ##
@@ -146,7 +154,6 @@ RejectionTest <- function(x,H_k,dH_k,X_k,Z_k){
   u_threshold = exp(h(x) - Upper(x,H_k,dH_k,X_k,Z_k))
 
   #print(l_threshold)
-
   if( w <= l_threshold){
 
     squeeze = TRUE
@@ -167,31 +174,26 @@ RejectionTest <- function(x,H_k,dH_k,X_k,Z_k){
 
   # Return boolean indicating whether to accept candidate sample point
   return(list(rej=squeeze+accept,add=add))
-
 }
 
-
-
-# Keep samples not rejected
-#x_vec = seq(lb,ub,by = 0.01)
-#plot(x_vec,sapply(x_vec,g), cex = 0.2)
-#points(x_vec,sapply(x_vec,Envelope),col = 'red', cex = 0.2)
-#plot(x_vec,sapply(x_vec,Lower),col = 'blue', cex = 0.5)
-#points(x_vec,sapply(x_vec,Upper),col = 'green', cex = 0.5)
-#points(x_vec,sapply(x_vec,h),col = 'red', cex = 0.5)
-
-
+#' Adaptive Rejection Sampling (ars) Function
+#'
+#' Adaptive rejection sampling function that creates a sample
+#' from a density function based on the Gilks(1992) paper.
+#'
+#' @param g probability density function, as a function of x (e.g. g <- function(x) dnorm(x,1,2))
+#' @param n number of values the final sample should contain
+#' @param lb lower bound to evaluate the density on
+#' @param ub upper bound to evaluate the density on
+#' @param X_init optional vector of initial values, default = NULL
+#' @param batchsize optional argument to adjust number of x* values to evaluate at once
+#' @return sample of with specified (n) elements
+#' @export
 
 ##########################################################################
 
 ### Main ARS function ###
 ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
-
-  #if (is.null(par2) == TRUE) {
-  #  g <- function(x) f(x,par1)
-  #} else {
-  #  g <- function(x) f(x,par1,par2)
-  #}
 
   # Test for uniform case
   uniftest <- utest(g, lb, ub)
@@ -211,17 +213,15 @@ ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
     X_k <- X_init
   }
 
-  ## Initialize abscissae and sample points
+  # Initialize abscissae and sample points
   x_all = NULL
 
   while(length(x_all)<n){
 
-
-
     # Compute intersection points
     Z_k <- ConstructZ(X_k,h,lb,ub)
 
-    # Store h and h' values ###
+    # Store h and h' values
     H_k <- h(X_k)
     dH_k <- grad(h, X_k)
 
@@ -230,7 +230,6 @@ ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
     C = sum(areas_u)
 
     # compute cumulative areas under envelope, which will sum to 1
-    #areas_env = unlist(sapply(2:length(Z_k),function(i){ integrate(Envelope,Z_k[i-1],Z_k[i],C,H_k,dH_k,X_k,Z_k)})[1,])
     areas_env = areas_u/C
     cum_area_env <- cumsum(areas_env)
     cum_area_env <- c(0,cum_area_env)
@@ -253,37 +252,6 @@ ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
     # Identify samples to add to X_k
     X_new_k = x_candidates[add_X_k_flag>0]
     X_k = sort(c(X_k,X_new_k))
-
-    #print('Total sample size')
-    #print(length(x_all))
-    #print('Total X_k length')
-    #print(length(X_k))
   }
-
   return(x_all)
-
 }
-
-
-KS = c(0,0,0,0)
-## Test out the ARS function
-g <- function(x) dnorm(x,0,1)
-output <- ars(g,20000,-10,10,batchsize=1000)
-KS[1] <- KS_norm(output,0,1)
-
-g <- function(x) dgamma(x,2,2)
-output <- ars(g,20000,0,10,batchsize=1000)
-KS[2] <- KS_gamma(output,2,2)
-
-g <- function(x) dunif(x,0,1)
-output <- ars(g,20000,0,1,batchsize=1000)
-KS[3] <- KS_unif(output,0,1)
-
-g <- function(x) dbeta(x,2,2)
-output <- ars(g,20000,0.01,0.99,batchsize=1000)
-KS[4] <- KS_beta(output,2,2)
-
-g <- function(x) dchisq(x,3)
-output <- ars(g,20000,0.01,10,batchsize=1000)
-KS[5] <- KS_chi(output,3)
-
