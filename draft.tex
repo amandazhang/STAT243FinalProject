@@ -1,0 +1,40 @@
+\documentclass[11pt]{article} 
+\usepackage{graphicx} 
+\graphicspath{ {images/} }
+\usepackage[margin=0.75in]{geometry}
+
+\title{Adaptive Rejection Sampler}
+
+\author{
+  Guo,Yuchao\\
+  \texttt{YuchaoGuo}
+  \and
+  Iverson,Alanna\\
+  \texttt{alannaiverson}
+  \and
+  Siddiq, Auyon\\
+  \texttt{auyon}
+  \and
+  Zhang, Qingyuan\\
+  \texttt{amandazhang}
+}
+
+
+\bibliographystyle{siam}
+
+\begin{document} 
+
+\maketitle
+
+
+
+% Equation needed to check for log concavity of a given function:
+
+A function $f$ : $\chi \rightarrow \Re$ is concave if and only if for any
+$\theta \in [0,1]$, $x_1, x_2 \in \chi \subseteq \Re^{d}$ : \par 
+$$f(\theta x_1 + (1-\theta ) x_2) \geq \theta f(x_1) + (1-\theta)f(x_2)$$
+
+
+\bibliography{project}
+
+\end{document}
