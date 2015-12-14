@@ -1,7 +1,6 @@
 
 
 #### Adaptive Rejection Sampling ####
-rm(list=ls())
 library(numDeriv)
 
 ## Take log of input function ##
@@ -255,10 +254,10 @@ ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
     X_new_k = x_candidates[add_X_k_flag>0]
     X_k = sort(c(X_k,X_new_k))
 
-    print('Total sample size')
-    print(length(x_all))
-    print('Total X_k length')
-    print(length(X_k))
+    #print('Total sample size')
+    #print(length(x_all))
+    #print('Total X_k length')
+    #print(length(X_k))
   }
 
   return(x_all)
