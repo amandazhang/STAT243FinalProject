@@ -1,10 +1,66 @@
+
+
 #### Adaptive Rejection Sampling ####
 rm(list=ls())
 library(numDeriv)
 
-## Take log of input function ## 
+## Take log of input function ##
 h <- function(x){
   return(log(g(x)))
+}
+
+logconc <- function(h,lb,ub) {
+
+  #log concave test here
+  p <- runif(10000, min = 0, max = 1)
+
+  #tests log concavity
+  result <- h(p*lb + (1-p)*ub) >= p*h(lb) + (1-p)*h(ub)
+  #result is 10000 TRUE's for the 10000 in p
+  t <- rep(TRUE, 10000)
+  finalreturn <- all.equal(t, result)
+  #if returns TRUE then all elements are equal and 10000 reps were log concave so log concave
+  if (finalreturn == FALSE) {
+    stop("Density input to ars likely not log-concave. Please check and try again.")
+  }
+}
+
+utest <- function(g, lb, ub) {
+  d <- (ub-lb)/100
+  delta <- (ub - lb)/100
+  x <- seq(lb + delta, ub - delta, by = d)
+  dgvals <- grad(g, x)
+  t <- rep(0,length(x))
+  finalreturn <- all.equal(t, dgvals)
+  if (finalreturn == TRUE) {
+    uniformcase <- TRUE
+  } else {
+    uniformcase <- FALSE
+  }
+  return(uniformcase)
+}
+
+#find optimum function
+findmax <- function(h,lb,ub) {
+  delta <- (ub - lb)/1000
+  max <- optimize(f = h, interval = c(lb, ub), lower = lb, upper = ub, maximum = TRUE)$maximum
+  #taking care of exp case
+  if (abs(max - ub) < .0001) {
+    rp <- max
+    mid <- max - .5*delta
+    lp <- (max - delta)
+    X_init <- c(lp,mid,rp)
+  } else if (abs(max - lb) < .0001) {
+    rp <- (max + delta)
+    mid <- max + .5*delta
+    lp <- max
+    X_init <- c(lp,rp)
+  } else {
+    rp <- (max + delta)
+    lp <- (max - delta)
+    X_init <- c(lp,max,rp)
+  }
+  return(X_init)
 }
 
 ## Compute intersection points of tangents, z ##
@@ -22,7 +78,7 @@ ConstructZ <- function(x,h,lb,ub){
 
 ## Lower bound, l(x) ##
 Lower <- function(x,H_k,dH_k,X_k){
-  
+
   if(x < min(X_k) | x > max(X_k)){
     return(-Inf)
   }else{
@@ -46,7 +102,7 @@ ExpUpper <- function(x,H_k,dH_k,X_k,Z_k){
 
 ## Normalized version of exponentiated upper bound, s(x) ##
 Envelope <- function(x,C,H_k,dH_k,X_k,Z_k){
-  
+
   return(ExpUpper(x,H_k,dH_k,X_k,Z_k)/C)
 }
 
@@ -60,54 +116,56 @@ GenCandidates <- function(u,cum_area_env,H_k,X_k,dH_k,Z_k,areas_u){
     x <- runif(1, Z_k[j],Z_k[j+1])
     return(x)
   }else{
-    
+
     # Sample from uniform random
     w = runif(1)
-    
+
     # Scale seed value w to area of the selected segment, since area under segment is not equal to 1
     w_sc = w*(1/areas_u[j])*exp(H_k[j] - X_k[j]*dH_k[j])*(exp(dH_k[j]*Z_k[j+1]) -exp(dH_k[j]*Z_k[j]))
-    
+
     # Use inverse CDF of selected segment to generate a sample
-    x = (1/dH_k[j])*log(w_sc*areas_u[j]/(exp(H_k[j] - X_k[j]*dH_k[j])) + exp(Z_k[j]*dH_k[j])) 
+    x = (1/dH_k[j])*log(w_sc*areas_u[j]/(exp(H_k[j] - X_k[j]*dH_k[j])) + exp(Z_k[j]*dH_k[j]))
   }
-    
-    return(x)
-  
-  }
+
+  return(x)
+
+}
 
 ## Apply squeeze and rejection test to each candidate sample ##
 RejectionTest <- function(x,H_k,dH_k,X_k,Z_k){
-  
+
   # Generate random seed
   w = runif(1)
-  
+
   # Initialize squeeze and reject tests, and indicator for adding point
   squeeze = FALSE
   accept = FALSE
   add = FALSE
-  
+
   # Compute threshold values for failing squeeze and rejection tests
   l_threshold = exp(Lower(x,H_k,dH_k,X_k) - Upper(x,H_k,dH_k,X_k,Z_k))
   u_threshold = exp(h(x) - Upper(x,H_k,dH_k,X_k,Z_k))
-  
+
+  #print(l_threshold)
+
   if( w <= l_threshold){
-    
+
     squeeze = TRUE
     accept = TRUE
-    
+
   }else if(w <= u_threshold){
-    
+
     squeeze = FALSE
     accept = TRUE
-    
+
   }else{
-    
+
     accept = FALSE
   }
-  
+
   # Determine whether to add point to abscissae
   if(squeeze*accept==FALSE) add = TRUE
-  
+
   # Return boolean indicating whether to accept candidate sample point
   return(list(rej=squeeze+accept,add=add))
 
@@ -128,71 +186,105 @@ RejectionTest <- function(x,H_k,dH_k,X_k,Z_k){
 ##########################################################################
 
 ### Main ARS function ###
-ars <- function(g,n,lb,ub,X_init){
-  
-  ## Initialize abscissae and sample points
-  X_k = X_init
-  x_all = NULL
-  
-  ## Set batchsize of how many points to sample in each iteration
-  batchsize = 1
-  
-  while(length(x_all)<n){
-  
+ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
+
+  #if (is.null(par2) == TRUE) {
+  #  g <- function(x) f(x,par1)
+  #} else {
+  #  g <- function(x) f(x,par1,par2)
+  #}
+
+  # Test for uniform case
+  uniftest <- utest(g, lb, ub)
+
+  if(uniftest == TRUE) {
+    x_all <- runif(n,lb,ub)
+    return(x_all)
+  }
   # Compute log of input function
   h <- function(x){
     return(log(g(x)))
   }
 
-  # Compute intersection points 
-  Z_k <- ConstructZ(X_k,h,lb,ub)
-  
-  # Store h and h' values ###
-  H_k <- h(X_k)
-  dH_k <- grad(h, X_k)
-  
-  # Calculate areas under exponential upper bound function for normalization purposes
-  areas_u = unlist(sapply(2:length(Z_k),function(i){integrate(ExpUpper,Z_k[i-1],Z_k[i],H_k,dH_k,X_k,Z_k)})[1,])
-  C = sum(areas_u)
-  
-  # compute cumulative areas under envelope, which will sum to 1
-  areas_env = unlist(sapply(2:length(Z_k),function(i){ integrate(Envelope,Z_k[i-1],Z_k[i],C,H_k,dH_k,X_k,Z_k)})[1,])
-  cum_area_env <- cumsum(areas_env)
-  cum_area_env <- c(0,cum_area_env)
-  
-  # Generate seeds for Inverse CDF method
-  seeds <-runif(batchsize)
-  
-  # Generate candidate samples
-  x_candidates <- sapply(seeds, GenCandidates, cum_area_env = cum_area_env, H_k = H_k, X_k = X_k,dH_k = dH_k,Z_k = Z_k,areas_u = areas_u)
-  
-  # Apply squeeze and rejection tests
-  test_flag <- sapply(x_candidates,RejectionTest, H_k = H_k, X_k = X_k, dH_k = dH_k,Z_k = Z_k)
-  keep_sample_flag <- test_flag[1,]
-  add_X_k_flag <- test_flag[2,]
-  
-  # Filter out rejected points and update full set of samples
-  x_keep <- x_candidates[keep_sample_flag>0]
-  x_all = c(x_keep,x_all) 
-  
-  # Identify samples to add to X_k
-  X_new_k = x_candidates[add_X_k_flag>0]
-  X_k = sort(c(X_k,X_new_k))
-  
-  print('Total sample size')
-  print(length(x_all))
-  print('Total X_k length')
-  print(length(X_k))
+  if (is.null(X_init) == TRUE) {
+    X_k <- findmax(h,lb,ub)
+  } else {
+    X_k <- X_init
   }
-  
-  return(list(x_all,X_k))
-  
+
+  ## Initialize abscissae and sample points
+  x_all = NULL
+
+  while(length(x_all)<n){
+
+
+
+    # Compute intersection points
+    Z_k <- ConstructZ(X_k,h,lb,ub)
+
+    # Store h and h' values ###
+    H_k <- h(X_k)
+    dH_k <- grad(h, X_k)
+
+    # Calculate areas under exponential upper bound function for normalization purposes
+    areas_u = unlist(sapply(2:length(Z_k),function(i){integrate(ExpUpper,Z_k[i-1],Z_k[i],H_k,dH_k,X_k,Z_k)})[1,])
+    C = sum(areas_u)
+
+    # compute cumulative areas under envelope, which will sum to 1
+    #areas_env = unlist(sapply(2:length(Z_k),function(i){ integrate(Envelope,Z_k[i-1],Z_k[i],C,H_k,dH_k,X_k,Z_k)})[1,])
+    areas_env = areas_u/C
+    cum_area_env <- cumsum(areas_env)
+    cum_area_env <- c(0,cum_area_env)
+
+    # Generate seeds for Inverse CDF method
+    seeds <-runif(batchsize)
+
+    # Generate candidate samples
+    x_candidates <- sapply(seeds, GenCandidates, cum_area_env = cum_area_env, H_k = H_k, X_k = X_k,dH_k = dH_k,Z_k = Z_k,areas_u = areas_u)
+
+    # Apply squeeze and rejection tests
+    test_flag <- sapply(x_candidates,RejectionTest, H_k = H_k, X_k = X_k, dH_k = dH_k,Z_k = Z_k)
+    keep_sample_flag <- test_flag[1,]
+    add_X_k_flag <- test_flag[2,]
+
+    # Filter out rejected points and update full set of samples
+    x_keep <- x_candidates[keep_sample_flag>0]
+    x_all = c(x_keep,x_all)
+
+    # Identify samples to add to X_k
+    X_new_k = x_candidates[add_X_k_flag>0]
+    X_k = sort(c(X_k,X_new_k))
+
+    print('Total sample size')
+    print(length(x_all))
+    print('Total X_k length')
+    print(length(X_k))
+  }
+
+  return(x_all)
+
 }
 
 
+KS = c(0,0,0,0)
+## Test out the ARS function
+g <- function(x) dnorm(x,0,1)
+output <- ars(g,20000,-10,10,batchsize=1000)
+KS[1] <- KS_norm(output,0,1)
 
-## Test out the ARS function 
-g<-dnorm
-ars(g,10000,-2,2,c(-2,0,2))
+g <- function(x) dgamma(x,2,2)
+output <- ars(g,20000,0,10,batchsize=1000)
+KS[2] <- KS_gamma(output,2,2)
 
+g <- function(x) dunif(x,0,1)
+output <- ars(g,20000,0,1,batchsize=1000)
+KS[3] <- KS_unif(output,0,1)
+
+g <- function(x) dbeta(x,2,2)
+output <- ars(g,20000,0.01,0.99,batchsize=1000)
+KS[4] <- KS_beta(output,2,2)
+
+g <- function(x) dchisq(x,3)
+output <- ars(g,20000,0.01,10,batchsize=1000)
+KS[5] <- KS_chi(output,3)
 
