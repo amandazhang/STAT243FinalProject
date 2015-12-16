@@ -1,5 +1,6 @@
 # STAT243FinalProject
-This is the origin repository for our project
+### UC Berkeley Fall 2015
+This is the repository for our final project
 
 ####Main parts for this repository
 - An R package named `ars`, including the .tar.gz file.
@@ -9,12 +10,14 @@ This is the origin repository for our project
 - You should first clone this repository to your local
 - Then in R Studio, you could type the following command `install.packages('~/scr/STAT243FinalProject/ars_0.0.0.9000.tar.gz', repos = NULL, type = "source")`
 - `library(ars)`
+- And, you are all set!
 
 ####Group members:
--Zhang,Qingyuan[`amandazhang`]
+-Zhang,Qingyuan ([`amandazhang`](https://github.com/amandazhang))
 
--SIDDIQ,AUYON
+-SIDDIQ,AUYON ([`auyon`](https://github.com/auyon))
 
--GUO,YUCHAO
+-GUO,YUCHAO  ([`YuchaoGuo`](https://github.com/YuchaoGuo))
 
--IVERSON,ALANNA GAIL. 
+-IVERSON,ALANNA GAIL ([`alannaiverson`](https://github.com/alannaiverson))
+
