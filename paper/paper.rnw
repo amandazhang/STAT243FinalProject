@@ -388,4 +388,13 @@ The upper hull created by the $Upper$ function graph is the red line below, the 
   par(new = T)
   plot(x,y_3, type = "l", col = "Black")
   @
+  \newpage
+  
+  The plots below visualizes the algorithm by showing the standard normal, the lower bound and the upper bound as the algorithm progresses from 1 to 100 iterations (with each iteration consisting of 1 sample).
+\begin{center}
+\includegraphics[scale = 0.4]{plot_1it.png}
+\includegraphics[scale = 0.4]{plot_5it.png}
+\includegraphics[scale = 0.4]{plot_10it.png}
+\includegraphics[scale = 0.4]{plot_100it.png}
+\end{center}
 \end{document}
