@@ -58,6 +58,9 @@ x^{\ast} = \frac{1}{h'(x_{j})} \cdotp log(e^{(h'(x_{j}))}+(\frac{(uc-cum[j])h'(x
 \indent In order to handle the different inputs, and verify the ars function is used properly, we also added a few checks at the beginning of the function to check for the uniform and exponential density cases, since these can be more difficult to handle than other densities. First, we find the maximum of the log of the input density using the optimize function. We also find the mode of the function if the user does not provide initial x values ($x_init$) in order to initialize the starting values. After running these initial values through the various smaller functions, we use GenCandidates to get some initial values of $x*$ to then pass to the RejectionTest function. This Rejection function will determine which $x*$ values to keep in the final sample and which to throw out based on the two inequalities in Gilks. Finally, we place the entire process into a while loop that ends when we hit the requisite number of $x*$ values in the returned samples.
 \\
 \\
+\indent With our main ars function completed, we moved on to informal, formal and unit testing. We informally tested our algorithm and the functions used within it. One way we found very helpful in making sure we were actually calculating what we needed was by graphing samples of results along the way. Doing this allowed us to catch several indexing errors as well some other bugs we had missed.
+\\
+\\
 \indent To formally test our algorithm, we decided to use the Kolmogorov-Smirnov Test (KS Test) to measure the maximum difference between the empirical CDF we got from our algorithm and the theoretical CDF (a known truth). We set tolerances to be relatively low to ensure that passing was only possible if our algorithm worked correctly. Our formal tests include 7 continuous distributions that are easily called within R:
 \\
 \\
@@ -87,7 +90,9 @@ Alanna: Alanna contributed to the project with the discussion of the approach to
 \\
 \indent The github username that holds the final .tar.gz file is: amandazhang (https://github.com/amandazhang)
 \\
-<<main function>>=
+\\
+\indent Below we do a quick test to show the output of the $Upper$ and $Lower$ functions we have created both graphically and by printing results.
+<<main function, echo=FALSE>>=
 #### Adaptive Rejection Sampling ####
 library(numDeriv)
 
@@ -346,8 +351,8 @@ ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
   return(x_all)
 }
 @
-This would declare all the functions I need in the environment.
-<<unit upper>>=
+
+<<unit upper, echo=FALSE, tidy=TRUE>>=
 #test for upper
   g<- dnorm
   X_k <- c(-1,0,1)
@@ -359,19 +364,22 @@ This would declare all the functions I need in the environment.
 
   x <- seq(lb+0.01, ub-0.01, by = 0.01)
   y <- sapply(x, Upper, H_k = H_k, dH_k = dH_k, X_k = X_k, Z_k = Z_k)
+  print("Values of the upper hull below:")
   y
-  plot(x,y, type = "l", col = "Red")
+  #plot(x,y, type = "l", col = "Red")
   @
-We will show the theoretic value matches the value we got.
-<<unit lower>>=
+
+<<unit lower, echo=FALSE, tidy=TRUE>>=
 #test for lower
   x_2 <- seq(lb+0.01, ub-0.01, by = 0.01)
   y_2 <- sapply(x_2, Lower, H_k = H_k, dH_k = dH_k, X_k = X_k)
+  print("Values of the lower hull below:")
   y_2
-  plot(x_2,y_2, type = "l", col = "Blue")
+  #plot(x_2,y_2, type = "l", col = "Blue")
   @
-We will show the theoretic value matches the value we got.
-<<total plot>>=
+The upper hull created by the $Upper$ function graph is the red line below, the lower hull created by the $Lower$ function graph is the blue line below and the given theoretical distribution we are to draw samples from is the black line below. You can clearly see by the graph below that the theoretical curve is bounded by the $Upper$ and $Lower$ functions as desired.
+<<total plot, echo=FALSE, tidy=TRUE>>=
+  print("Graph of upper hull = red, lower hull = blue, true curve = black")
   y_3 <- h(x)
   plot(x,y, type = "l", col = "Red")
   par(new = T)
