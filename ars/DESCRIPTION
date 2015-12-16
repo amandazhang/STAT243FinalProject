@@ -1,0 +1,20 @@
+Package: ars
+Type: Package
+Title: Adaptive Rejection Sampling Function
+Version: 0.0.0.9000
+Date: 2015-12-10
+Authors@R: c(
+    person("Yuchao", "Guo", email = "gycchina@gmail.com", role = c("aut", "cre")),
+    person("Auyon", "Siddiq", email = "auyon@berkeley.edu", role = "aut"),
+    person("Qingyuan", "Zhang", email = "amandazhang@berkeley.edu", role = "aut"),
+    person("Alanna", "Iverson", email = "alannaiverson@gmail.com", role = "aut"))
+Maintainer: Alanna Iverson <alannaiverson@gmail.com>
+Description: Adaptive rejection sample function using the tangent approach
+License: BSD
+LazyData: TRUE
+Suggests:
+    testthat
+Imports:
+    numDeriv,
+    stats
+RoxygenNote: 5.0.1
