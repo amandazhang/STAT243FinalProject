@@ -4,7 +4,7 @@ This is the repository for our final project
 
 ####Main parts for this repository
 - An R package named `ars`, including the .tar.gz file.
-- A PDF document `draft` which describes our teams' solution.
+- A PDF document `paper` which describes our teams' solution.
 
 ####How to use our ars package
 - You should first clone this repository to your local
