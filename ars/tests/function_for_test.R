@@ -1,6 +1,5 @@
 #### Adaptive Rejection Sampling ####
 library(numDeriv)
-
 ## Take log of input function ##
 h <- function(x){
   return(log(g(x)))
@@ -255,3 +254,4 @@ ars <- function(g,n,lb,ub,X_init = NULL, batchsize = round(n/100)){
   }
   return(x_all)
 }
+g <- dnorm
